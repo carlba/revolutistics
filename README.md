@@ -8,9 +8,10 @@ transactions.
 
 - 🔄 **Automatic sync** – polls the Revolut Business API at a configurable interval (default every
   5 minutes) and upserts transactions into Postgres.
-- 🗄️ **PostgreSQL storage** – transactions are persisted with full JSON payloads.
+- 🗄️ **Prisma ORM** – type-safe database access; schema defined in `prisma/schema.prisma`.
 - 🌐 **REST API** – `GET /api/transactions` and `GET /api/transactions/:id`.
 - 💻 **Web UI** – filter and search transactions at `http://localhost:3000`.
+- 🔒 **Rate limiting** – 100 requests/minute per IP on all API routes.
 
 ## Quick Start
 

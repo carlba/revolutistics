@@ -6,15 +6,21 @@ const requiredEnvVar = (name: string): string => {
   return value;
 };
 
+const dbHost = process.env['DB_HOST'] ?? 'localhost';
+const dbPort = process.env['DB_PORT'] ?? '5432';
+const dbName = process.env['DB_NAME'] ?? 'revolutistics';
+const dbUser = process.env['DB_USER'] ?? 'postgres';
+const dbPassword = process.env['DB_PASSWORD'] ?? 'postgres';
+
+// Prisma reads DATABASE_URL from the environment. Construct it from individual
+// DB_* vars if the caller has not already set it.
+if (!process.env['DATABASE_URL']) {
+  process.env['DATABASE_URL'] =
+    `postgresql://${dbUser}:${dbPassword}@${dbHost}:${dbPort}/${dbName}`;
+}
+
 export const config = {
   port: parseInt(process.env['PORT'] ?? '3000', 10),
-  database: {
-    host: process.env['DB_HOST'] ?? 'localhost',
-    port: parseInt(process.env['DB_PORT'] ?? '5432', 10),
-    name: process.env['DB_NAME'] ?? 'revolutistics',
-    user: process.env['DB_USER'] ?? 'postgres',
-    password: process.env['DB_PASSWORD'] ?? 'postgres',
-  },
   revolut: {
     apiBaseUrl:
       process.env['REVOLUT_API_BASE_URL'] ?? 'https://b2b.revolut.com/api/1.0',

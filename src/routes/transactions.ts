@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 
-import { pool } from '../database/client.js';
+import { prisma } from '../database/client.js';
 
 const apiLimiter = rateLimit({
   windowMs: 60 * 1000,
@@ -15,25 +15,23 @@ transactionsRouter.use(apiLimiter);
 
 transactionsRouter.get('/', async (_req, res) => {
   try {
-    const { rows } = await pool.query<{
-      id: string;
-      type: string;
-      state: string;
-      created_at: Date;
-      updated_at: Date;
-      completed_at: Date | null;
-      reference: string | null;
-      legs: unknown;
-      merchant: unknown;
-      synced_at: Date;
-    }>(
-      `SELECT id, type, state, created_at, updated_at, completed_at,
-              reference, legs, merchant, synced_at
-       FROM transactions
-       ORDER BY created_at DESC
-       LIMIT 500`
-    );
-    res.json(rows);
+    const transactions = await prisma.transaction.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 500,
+      select: {
+        id: true,
+        type: true,
+        state: true,
+        createdAt: true,
+        updatedAt: true,
+        completedAt: true,
+        reference: true,
+        legs: true,
+        merchant: true,
+        syncedAt: true,
+      },
+    });
+    res.json(transactions);
   } catch (err) {
     console.error('Error fetching transactions:', err);
     res.status(500).json({ error: 'Failed to fetch transactions' });
@@ -42,15 +40,15 @@ transactionsRouter.get('/', async (_req, res) => {
 
 transactionsRouter.get('/:id', async (req, res) => {
   try {
-    const { rows } = await pool.query<{ raw_data: unknown }>(
-      `SELECT raw_data FROM transactions WHERE id = $1`,
-      [req.params['id']]
-    );
-    if (rows.length === 0) {
+    const transaction = await prisma.transaction.findUnique({
+      where: { id: req.params['id'] },
+      select: { rawData: true },
+    });
+    if (!transaction) {
       res.status(404).json({ error: 'Transaction not found' });
       return;
     }
-    res.json(rows[0].raw_data);
+    res.json(transaction.rawData);
   } catch (err) {
     console.error('Error fetching transaction:', err);
     res.status(500).json({ error: 'Failed to fetch transaction' });

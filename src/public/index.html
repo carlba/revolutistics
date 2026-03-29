@@ -365,7 +365,7 @@
             amountVal === null ? '' : amountVal >= 0 ? 'credit' : 'debit';
           const tr = document.createElement('tr');
           tr.innerHTML = `
-            <td>${formatDate(tx.created_at)}</td>
+            <td>${formatDate(tx.createdAt)}</td>
             <td>${tx.type ?? '—'}</td>
             <td><span class="badge ${badgeClass(tx.state)}">${tx.state ?? '—'}</span></td>
             <td>${tx.reference ?? '—'}</td>

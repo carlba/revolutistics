@@ -1,45 +1,51 @@
-import { pool } from '../database/client.js';
+import { Prisma } from '@prisma/client';
+
+import { prisma } from '../database/client.js';
 import type { RevolutTransaction } from '../revolut/types.js';
 import { RevolutClient } from '../revolut/client.js';
 import { config } from '../config.js';
 
 let syncTimer: NodeJS.Timeout | null = null;
 
+function toJson(value: unknown): Prisma.InputJsonValue {
+  return value as Prisma.InputJsonValue;
+}
+
+function toNullableJson(value: unknown): Prisma.NullableJsonNullValueInput | Prisma.InputJsonValue {
+  return value == null ? Prisma.JsonNull : (value as Prisma.InputJsonValue);
+}
+
 async function upsertTransactions(transactions: RevolutTransaction[]): Promise<void> {
   if (transactions.length === 0) return;
 
-  const values: unknown[] = [];
-  const placeholders = transactions.map((tx, i) => {
-    const base = i * 10;
-    values.push(
-      tx.id,
-      tx.type,
-      tx.state,
-      tx.created_at,
-      tx.updated_at,
-      tx.completed_at ?? null,
-      tx.reference ?? null,
-      JSON.stringify(tx.legs),
-      tx.merchant ? JSON.stringify(tx.merchant) : null,
-      JSON.stringify(tx)
-    );
-    return `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7}, $${base + 8}, $${base + 9}, $${base + 10})`;
-  });
-
-  await pool.query(
-    `INSERT INTO transactions
-       (id, type, state, created_at, updated_at, completed_at, reference, legs, merchant, raw_data)
-     VALUES ${placeholders.join(', ')}
-     ON CONFLICT (id) DO UPDATE SET
-       state        = EXCLUDED.state,
-       updated_at   = EXCLUDED.updated_at,
-       completed_at = EXCLUDED.completed_at,
-       reference    = EXCLUDED.reference,
-       legs         = EXCLUDED.legs,
-       merchant     = EXCLUDED.merchant,
-       raw_data     = EXCLUDED.raw_data,
-       synced_at    = NOW()`,
-    values
+  await prisma.$transaction(
+    transactions.map(tx =>
+      prisma.transaction.upsert({
+        where: { id: tx.id },
+        create: {
+          id: tx.id,
+          type: tx.type,
+          state: tx.state,
+          createdAt: new Date(tx.created_at),
+          updatedAt: new Date(tx.updated_at),
+          completedAt: tx.completed_at ? new Date(tx.completed_at) : null,
+          reference: tx.reference ?? null,
+          legs: toJson(tx.legs),
+          merchant: toNullableJson(tx.merchant),
+          rawData: toJson(tx),
+        },
+        update: {
+          state: tx.state,
+          updatedAt: new Date(tx.updated_at),
+          completedAt: tx.completed_at ? new Date(tx.completed_at) : null,
+          reference: tx.reference ?? null,
+          legs: toJson(tx.legs),
+          merchant: toNullableJson(tx.merchant),
+          rawData: toJson(tx),
+          syncedAt: new Date(),
+        },
+      })
+    )
   );
 }
 

@@ -3,8 +3,7 @@ import { fileURLToPath } from 'url';
 import express from 'express';
 
 import { config } from './config.js';
-import { runMigrations } from './database/schema.js';
-import { pool } from './database/client.js';
+import { prisma } from './database/client.js';
 import { transactionsRouter } from './routes/transactions.js';
 import { startSyncService } from './services/transaction-sync.js';
 
@@ -22,7 +21,9 @@ app.get('/health', (_req, res) => {
 });
 
 async function main(): Promise<void> {
-  await runMigrations();
+  await prisma.$connect();
+  console.log('Database connected');
+
   startSyncService();
 
   app.listen(config.port, () => {
@@ -32,6 +33,6 @@ async function main(): Promise<void> {
 
 main().catch(err => {
   console.error('Fatal error:', err);
-  void pool.end();
+  void prisma.$disconnect();
   process.exit(1);
 });
