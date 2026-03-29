@@ -1,6 +1,84 @@
-# typescript-template
+# Revolutistics
 
-A template for a Typescript repository
+A backend service that retrieves transactions from the [Revolut Business API](https://developer.revolut.com/docs/business/business-api) at
+configurable intervals and stores them in a PostgreSQL database. A web UI lets you browse those
+transactions.
+
+## Features
+
+- 🔄 **Automatic sync** – polls the Revolut Business API at a configurable interval (default every
+  5 minutes) and upserts transactions into Postgres.
+- 🗄️ **PostgreSQL storage** – transactions are persisted with full JSON payloads.
+- 🌐 **REST API** – `GET /api/transactions` and `GET /api/transactions/:id`.
+- 💻 **Web UI** – filter and search transactions at `http://localhost:3000`.
+
+## Quick Start
+
+### 1. Prerequisites
+
+- Node.js ≥ 22 (see `.nvmrc`)
+- Docker & Docker Compose (for the database)
+- A [Revolut Business API](https://developer.revolut.com/docs/business/business-api) access token
+
+### 2. Configure environment
+
+```bash
+cp .env.example .env
+# Edit .env and set REVOLUT_ACCESS_TOKEN
+```
+
+### 3. Start with Docker Compose
+
+```bash
+docker compose up --build
+```
+
+The app will be available at <http://localhost:3000>.
+
+### 4. Local development (without Docker)
+
+```bash
+# Start Postgres
+docker compose up db -d
+
+# Install dependencies
+npm install
+
+# Run in watch mode
+npm run start:dev
+```
+
+## Environment Variables
+
+| Variable                 | Default                              | Description                               |
+| ------------------------ | ------------------------------------ | ----------------------------------------- |
+| `REVOLUT_ACCESS_TOKEN`   | _(required)_                         | Revolut Business API Bearer token         |
+| `REVOLUT_API_BASE_URL`   | `https://b2b.revolut.com/api/1.0`    | API base URL (use sandbox URL for testing)|
+| `SYNC_INTERVAL_SECONDS`  | `300`                                | How often to sync transactions (seconds)  |
+| `SYNC_LOOKBACK_DAYS`     | `30`                                 | Days of history to fetch on each sync     |
+| `PORT`                   | `3000`                               | HTTP server port                          |
+| `DB_HOST`                | `localhost`                          | PostgreSQL host                           |
+| `DB_PORT`                | `5432`                               | PostgreSQL port                           |
+| `DB_NAME`                | `revolutistics`                      | PostgreSQL database name                  |
+| `DB_USER`                | `postgres`                           | PostgreSQL user                           |
+| `DB_PASSWORD`            | `postgres`                           | PostgreSQL password                       |
+
+## API Endpoints
+
+| Method | Path                      | Description                          |
+| ------ | ------------------------- | ------------------------------------ |
+| GET    | `/api/transactions`       | List last 500 transactions           |
+| GET    | `/api/transactions/:id`   | Get raw JSON for a single transaction|
+| GET    | `/health`                 | Health check                         |
+
+## Development
+
+```bash
+npm run test          # Run tests
+npm run lint          # Run ESLint
+npm run format        # Format code with Prettier
+npm run build         # Compile TypeScript + copy static assets
+```
 
 ## ESLint Setup
 
