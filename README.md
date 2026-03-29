@@ -27,6 +27,7 @@ transactions.
 ```bash
 cp .env.example .env
 # Edit .env — set REVOLUT_CLIENT_ID, REVOLUT_CLIENT_SECRET, REVOLUT_ACCESS_TOKEN
+# Set DATABASE_URL to your Postgres connection URI
 # Optionally set REVOLUT_REFRESH_TOKEN for automatic token renewal
 ```
 
@@ -61,15 +62,10 @@ npm run start:dev
 | `REVOLUT_REFRESH_TOKEN`   | _(optional)_                            | Refresh token for automatic access token renewal     |
 | `REVOLUT_API_BASE_URL`    | `https://openbanking.revolut.com/api`   | Open Banking AISP base URL                          |
 | `REVOLUT_TOKEN_URL`       | `https://oba.revolut.com/token`         | OAuth 2.0 token endpoint                             |
+| `DATABASE_URL`            | _(required)_                            | Postgres connection URI (e.g. `postgresql://user:pass@host:5432/db`) |
 | `SYNC_INTERVAL_SECONDS`   | `300`                                   | How often to sync transactions (seconds)             |
 | `SYNC_LOOKBACK_DAYS`      | `30`                                    | Days of history to fetch on each sync                |
 | `PORT`                    | `3000`                                  | HTTP server port                                     |
-| `DATABASE_URL`            | _(auto-built from DB_* vars)_           | Prisma Postgres connection string                    |
-| `DB_HOST`                 | `localhost`                             | PostgreSQL host                                      |
-| `DB_PORT`                 | `5432`                                  | PostgreSQL port                                      |
-| `DB_NAME`                 | `revolutistics`                         | PostgreSQL database name                             |
-| `DB_USER`                 | `postgres`                              | PostgreSQL user                                      |
-| `DB_PASSWORD`             | `postgres`                              | PostgreSQL password                                  |
 
 ## API Endpoints
 

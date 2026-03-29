@@ -6,18 +6,8 @@ const requiredEnvVar = (name: string): string => {
   return value;
 };
 
-const dbHost = process.env['DB_HOST'] ?? 'localhost';
-const dbPort = process.env['DB_PORT'] ?? '5432';
-const dbName = process.env['DB_NAME'] ?? 'revolutistics';
-const dbUser = process.env['DB_USER'] ?? 'postgres';
-const dbPassword = process.env['DB_PASSWORD'] ?? 'postgres';
-
-// Prisma reads DATABASE_URL from the environment. Construct it from individual
-// DB_* vars if the caller has not already set it.
-if (!process.env['DATABASE_URL']) {
-  process.env['DATABASE_URL'] =
-    `postgresql://${dbUser}:${dbPassword}@${dbHost}:${dbPort}/${dbName}`;
-}
+// Prisma reads DATABASE_URL from the environment directly.
+requiredEnvVar('DATABASE_URL');
 
 export const config = {
   port: parseInt(process.env['PORT'] ?? '3000', 10),

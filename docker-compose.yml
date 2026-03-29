@@ -21,13 +21,13 @@ services:
       - '3000:3000'
     environment:
       PORT: 3000
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_NAME: revolutistics
-      DB_USER: postgres
-      DB_PASSWORD: postgres
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/revolutistics
+      REVOLUT_CLIENT_ID: ${REVOLUT_CLIENT_ID}
+      REVOLUT_CLIENT_SECRET: ${REVOLUT_CLIENT_SECRET}
       REVOLUT_ACCESS_TOKEN: ${REVOLUT_ACCESS_TOKEN}
-      REVOLUT_API_BASE_URL: ${REVOLUT_API_BASE_URL:-https://b2b.revolut.com/api/1.0}
+      REVOLUT_REFRESH_TOKEN: ${REVOLUT_REFRESH_TOKEN:-}
+      REVOLUT_API_BASE_URL: ${REVOLUT_API_BASE_URL:-https://openbanking.revolut.com/api}
+      REVOLUT_TOKEN_URL: ${REVOLUT_TOKEN_URL:-https://oba.revolut.com/token}
       SYNC_INTERVAL_SECONDS: ${SYNC_INTERVAL_SECONDS:-300}
       SYNC_LOOKBACK_DAYS: ${SYNC_LOOKBACK_DAYS:-30}
     depends_on:
