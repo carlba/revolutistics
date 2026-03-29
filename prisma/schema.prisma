@@ -1,0 +1,33 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Transaction {
+  /// Unique transaction identifier (TransactionId from Open Banking)
+  id                            String    @id
+  /// Account this transaction belongs to
+  accountId                     String    @map("account_id")
+  /// Free-text reference supplied by the initiating party
+  transactionReference          String?   @map("transaction_reference")
+  /// Monetary amount as a decimal string (e.g. "150.00", always 2 decimal places, no exponential notation)
+  amount                        String
+  currency                      String
+  /// "Credit" or "Debit"
+  creditDebitIndicator          String    @map("credit_debit_indicator")
+  /// "Booked" or "Pending"
+  status                        String
+  bookingDateTime               DateTime  @map("booking_date_time") @db.Timestamptz(6)
+  valueDateTime                 DateTime? @map("value_date_time") @db.Timestamptz(6)
+  /// Human-readable transaction description
+  transactionInformation        String?   @map("transaction_information")
+  /// Full raw Open Banking transaction object
+  rawData                       Json      @map("raw_data")
+  syncedAt                      DateTime  @default(now()) @map("synced_at") @db.Timestamptz(6)
+
+  @@map("transactions")
+}

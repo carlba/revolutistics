@@ -1,0 +1,38 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: revolutistics
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    ports:
+      - '3000:3000'
+    environment:
+      PORT: 3000
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/revolutistics
+      REVOLUT_CLIENT_ID: ${REVOLUT_CLIENT_ID}
+      REVOLUT_CLIENT_SECRET: ${REVOLUT_CLIENT_SECRET}
+      REVOLUT_ACCESS_TOKEN: ${REVOLUT_ACCESS_TOKEN}
+      REVOLUT_REFRESH_TOKEN: ${REVOLUT_REFRESH_TOKEN:-}
+      REVOLUT_API_BASE_URL: ${REVOLUT_API_BASE_URL:-https://openbanking.revolut.com/api}
+      REVOLUT_TOKEN_URL: ${REVOLUT_TOKEN_URL:-https://oba.revolut.com/token}
+      SYNC_INTERVAL_SECONDS: ${SYNC_INTERVAL_SECONDS:-300}
+      SYNC_LOOKBACK_DAYS: ${SYNC_LOOKBACK_DAYS:-30}
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

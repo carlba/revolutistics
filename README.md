@@ -1,6 +1,88 @@
-# typescript-template
+# Revolutistics
 
-A template for a Typescript repository
+A backend service that retrieves transactions from the [Revolut Open Banking API](https://developer.revolut.com/docs/open-banking) at
+configurable intervals and stores them in a PostgreSQL database. A web UI lets you browse those
+transactions.
+
+## Features
+
+- 🔄 **Automatic sync** – polls the Revolut Open Banking AISP API at a configurable interval
+  (default every 5 minutes), fetching all accounts and their transactions.
+- 🗄️ **Prisma ORM** – type-safe database access; schema defined in `prisma/schema.prisma`.
+- 🌐 **REST API** – `GET /api/transactions` and `GET /api/transactions/:id`.
+- 💻 **Web UI** – filter and search transactions at `http://localhost:3000`.
+- 🔒 **Rate limiting** – 100 requests/minute per IP on all API routes.
+
+## Quick Start
+
+### 1. Prerequisites
+
+- Node.js ≥ 22 (see `.nvmrc`)
+- Docker & Docker Compose (for the database)
+- A [Revolut Open Banking TPP registration](https://developer.revolut.com/docs/open-banking) with
+  a valid access token (obtained via the OAuth 2.0 authorization code flow)
+
+### 2. Configure environment
+
+```bash
+cp .env.example .env
+# Edit .env — set REVOLUT_CLIENT_ID, REVOLUT_CLIENT_SECRET, REVOLUT_ACCESS_TOKEN
+# Set DATABASE_URL to your Postgres connection URI
+# Optionally set REVOLUT_REFRESH_TOKEN for automatic token renewal
+```
+
+### 3. Start with Docker Compose
+
+```bash
+docker compose up --build
+```
+
+The app will be available at <http://localhost:3000>.
+
+### 4. Local development (without Docker)
+
+```bash
+# Start Postgres
+docker compose up db -d
+
+# Install dependencies
+npm install
+
+# Run in watch mode
+npm run start:dev
+```
+
+## Environment Variables
+
+| Variable                  | Default                                 | Description                                          |
+| ------------------------- | --------------------------------------- | ---------------------------------------------------- |
+| `REVOLUT_CLIENT_ID`       | _(required)_                            | OAuth 2.0 client ID from the Revolut Developer Portal|
+| `REVOLUT_CLIENT_SECRET`   | _(required)_                            | OAuth 2.0 client secret                              |
+| `REVOLUT_ACCESS_TOKEN`    | _(required)_                            | Bearer token from the authorization code flow        |
+| `REVOLUT_REFRESH_TOKEN`   | _(optional)_                            | Refresh token for automatic access token renewal     |
+| `REVOLUT_API_BASE_URL`    | `https://openbanking.revolut.com/api`   | Open Banking AISP base URL                          |
+| `REVOLUT_TOKEN_URL`       | `https://oba.revolut.com/token`         | OAuth 2.0 token endpoint                             |
+| `DATABASE_URL`            | _(required)_                            | Postgres connection URI (e.g. `postgresql://user:pass@host:5432/db`) |
+| `SYNC_INTERVAL_SECONDS`   | `300`                                   | How often to sync transactions (seconds)             |
+| `SYNC_LOOKBACK_DAYS`      | `30`                                    | Days of history to fetch on each sync                |
+| `PORT`                    | `3000`                                  | HTTP server port                                     |
+
+## API Endpoints
+
+| Method | Path                      | Description                          |
+| ------ | ------------------------- | ------------------------------------ |
+| GET    | `/api/transactions`       | List last 500 transactions           |
+| GET    | `/api/transactions/:id`   | Get raw JSON for a single transaction|
+| GET    | `/health`                 | Health check                         |
+
+## Development
+
+```bash
+npm run test          # Run tests
+npm run lint          # Run ESLint
+npm run format        # Format code with Prettier
+npm run build         # Compile TypeScript + copy static assets
+```
 
 ## ESLint Setup
 

@@ -13,10 +13,10 @@ RUN npm install
 # Copy the rest of the application code
 COPY . .
 
-# Compile TypeScript to JavaScript
+# Compile TypeScript to JavaScript (also runs prisma generate)
 RUN npm run build
 
 VOLUME /mnt /config
 
-# Run the script
-CMD ["node", "dist/index.js"]
+# Push schema to DB then start the server
+CMD ["sh", "-c", "npx prisma db push && node dist/index.js"]

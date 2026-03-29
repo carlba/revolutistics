@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
 
-import { helloWorld } from './index.js';
-
-describe('helloWorld', () => {
-  it('should return "Hello World!"', () => {
-    expect(helloWorld()).toBe('Hello World!');
+describe('server entrypoint', () => {
+  it('should be a valid module', async () => {
+    // Verifies the module structure is importable without actually starting the server
+    const configModule = await import('./config.js');
+    expect(configModule).toBeDefined();
   });
 });
