@@ -1,39 +1,80 @@
-export interface RevolutAmount {
-  amount: number;
-  currency: string;
+/** Monetary amount as defined by OBActiveOrHistoricCurrencyAndAmount */
+export interface OBAmount {
+  Amount: string;
+  Currency: string;
 }
 
-export interface RevolutCounterparty {
-  id?: string;
-  name?: string;
-  account_id?: string;
-  account_type?: string;
+/** UK Open Banking bank transaction code */
+export interface OBBankTransactionCode {
+  Code: string;
+  SubCode: string;
 }
 
-export interface RevolutLegs {
-  leg_id: string;
-  amount: number;
-  currency: string;
-  bill_amount?: number;
-  bill_currency?: string;
-  account_id: string;
-  counterparty?: RevolutCounterparty;
-  description?: string;
+/** Proprietary bank transaction code (Revolut-specific) */
+export interface OBProprietaryBankTransactionCode {
+  Code: string;
+  Issuer: string;
 }
 
-export interface RevolutTransaction {
-  id: string;
-  type: string;
-  state: string;
-  created_at: string;
-  updated_at: string;
-  completed_at?: string;
-  reference?: string;
-  legs: RevolutLegs[];
-  merchant?: {
-    name?: string;
-    city?: string;
-    category_code?: string;
-    country?: string;
+/** Single transaction as returned by the AISP /transactions endpoint (OBTransaction6) */
+export interface OBTransaction {
+  AccountId: string;
+  TransactionId: string;
+  TransactionReference?: string;
+  Amount: OBAmount;
+  CreditDebitIndicator: 'Credit' | 'Debit';
+  Status: 'Booked' | 'Pending';
+  BookingDateTime: string;
+  ValueDateTime?: string;
+  TransactionInformation?: string;
+  BankTransactionCode?: OBBankTransactionCode;
+  ProprietaryBankTransactionCode?: OBProprietaryBankTransactionCode;
+  SupplementaryData?: Record<string, unknown>;
+}
+
+/** Envelope returned by GET /aisp/accounts/{AccountId}/transactions */
+export interface OBTransactionResponse {
+  Data: {
+    Transaction: OBTransaction[];
   };
+  Links: {
+    Self: string;
+    Next?: string;
+    Last?: string;
+  };
+  Meta: {
+    TotalPages: number;
+  };
+}
+
+/** Single account as returned by the AISP /accounts endpoint (OBAccount6) */
+export interface OBAccount {
+  AccountId: string;
+  Currency: string;
+  AccountType: string;
+  AccountSubType: string;
+  Description?: string;
+  Nickname?: string;
+}
+
+/** Envelope returned by GET /aisp/accounts */
+export interface OBAccountResponse {
+  Data: {
+    Account: OBAccount[];
+  };
+  Links: {
+    Self: string;
+  };
+  Meta: {
+    TotalPages: number;
+  };
+}
+
+/** Shape of a successful token response from the OAuth token endpoint */
+export interface OBTokenResponse {
+  access_token: string;
+  token_type: string;
+  expires_in?: number;
+  refresh_token?: string;
+  scope?: string;
 }

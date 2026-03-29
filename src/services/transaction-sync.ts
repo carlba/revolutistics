@@ -1,8 +1,8 @@
 import { Prisma } from '@prisma/client';
 
 import { prisma } from '../database/client.js';
-import type { RevolutTransaction } from '../revolut/types.js';
-import { RevolutClient } from '../revolut/client.js';
+import type { OBTransaction } from '../revolut/types.js';
+import { RevolutOpenBankingClient } from '../revolut/client.js';
 import { config } from '../config.js';
 
 let syncTimer: NodeJS.Timeout | null = null;
@@ -11,36 +11,35 @@ function toJson(value: unknown): Prisma.InputJsonValue {
   return value as Prisma.InputJsonValue;
 }
 
-function toNullableJson(value: unknown): Prisma.NullableJsonNullValueInput | Prisma.InputJsonValue {
-  return value == null ? Prisma.JsonNull : (value as Prisma.InputJsonValue);
-}
-
-async function upsertTransactions(transactions: RevolutTransaction[]): Promise<void> {
+async function upsertTransactions(transactions: OBTransaction[]): Promise<void> {
   if (transactions.length === 0) return;
 
   await prisma.$transaction(
     transactions.map(tx =>
       prisma.transaction.upsert({
-        where: { id: tx.id },
+        where: { id: tx.TransactionId },
         create: {
-          id: tx.id,
-          type: tx.type,
-          state: tx.state,
-          createdAt: new Date(tx.created_at),
-          updatedAt: new Date(tx.updated_at),
-          completedAt: tx.completed_at ? new Date(tx.completed_at) : null,
-          reference: tx.reference ?? null,
-          legs: toJson(tx.legs),
-          merchant: toNullableJson(tx.merchant),
+          id: tx.TransactionId,
+          accountId: tx.AccountId,
+          transactionReference: tx.TransactionReference ?? null,
+          amount: tx.Amount.Amount,
+          currency: tx.Amount.Currency,
+          creditDebitIndicator: tx.CreditDebitIndicator,
+          status: tx.Status,
+          bookingDateTime: new Date(tx.BookingDateTime),
+          valueDateTime: tx.ValueDateTime ? new Date(tx.ValueDateTime) : null,
+          transactionInformation: tx.TransactionInformation ?? null,
           rawData: toJson(tx),
         },
         update: {
-          state: tx.state,
-          updatedAt: new Date(tx.updated_at),
-          completedAt: tx.completed_at ? new Date(tx.completed_at) : null,
-          reference: tx.reference ?? null,
-          legs: toJson(tx.legs),
-          merchant: toNullableJson(tx.merchant),
+          transactionReference: tx.TransactionReference ?? null,
+          amount: tx.Amount.Amount,
+          currency: tx.Amount.Currency,
+          creditDebitIndicator: tx.CreditDebitIndicator,
+          status: tx.Status,
+          bookingDateTime: new Date(tx.BookingDateTime),
+          valueDateTime: tx.ValueDateTime ? new Date(tx.ValueDateTime) : null,
+          transactionInformation: tx.TransactionInformation ?? null,
           rawData: toJson(tx),
           syncedAt: new Date(),
         },
@@ -50,22 +49,38 @@ async function upsertTransactions(transactions: RevolutTransaction[]): Promise<v
 }
 
 export async function syncTransactions(): Promise<void> {
-  const client = new RevolutClient(
+  const client = new RevolutOpenBankingClient(
     config.revolut.apiBaseUrl,
-    config.revolut.accessToken
+    config.revolut.tokenUrl,
+    config.revolut.clientId,
+    config.revolut.clientSecret,
+    config.revolut.accessToken,
+    config.revolut.refreshToken
   );
 
   const from = new Date();
   from.setDate(from.getDate() - config.sync.transactionLookbackDays);
 
   try {
-    console.log(
-      `[sync] Fetching transactions from ${from.toISOString()} to now...`
-    );
-    const transactions = await client.getTransactions({ from });
-    console.log(`[sync] Fetched ${transactions.length} transactions`);
-    await upsertTransactions(transactions);
-    console.log(`[sync] Upserted ${transactions.length} transactions`);
+    const accounts = await client.getAccounts();
+    console.log(`[sync] Found ${accounts.length} account(s)`);
+
+    for (const account of accounts) {
+      console.log(
+        `[sync] Fetching transactions for account ${account.AccountId} ` +
+          `(${account.Currency}) from ${from.toISOString()}...`
+      );
+      const transactions = await client.getTransactions(account.AccountId, {
+        fromBookingDateTime: from,
+      });
+      console.log(
+        `[sync] Fetched ${transactions.length} transaction(s) for account ${account.AccountId}`
+      );
+      await upsertTransactions(transactions);
+      console.log(
+        `[sync] Upserted ${transactions.length} transaction(s) for account ${account.AccountId}`
+      );
+    }
   } catch (err) {
     console.error('[sync] Error syncing transactions:', err);
   }

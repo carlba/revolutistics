@@ -260,19 +260,14 @@
     <div class="toolbar">
       <input type="text" id="search" placeholder="Search reference, type…" />
       <select id="state-filter">
-        <option value="">All states</option>
-        <option value="completed">Completed</option>
-        <option value="pending">Pending</option>
-        <option value="failed">Failed</option>
-        <option value="reverted">Reverted</option>
+        <option value="">All statuses</option>
+        <option value="Booked">Booked</option>
+        <option value="Pending">Pending</option>
       </select>
       <select id="type-filter">
-        <option value="">All types</option>
-        <option value="transfer">Transfer</option>
-        <option value="payment">Payment</option>
-        <option value="refund">Refund</option>
-        <option value="exchange">Exchange</option>
-        <option value="topup">Topup</option>
+        <option value="">All directions</option>
+        <option value="Credit">Credit</option>
+        <option value="Debit">Debit</option>
       </select>
       <button id="refresh-btn">⟳ Refresh</button>
       <div class="spacer"></div>
@@ -285,9 +280,9 @@
       <table id="tx-table" style="display:none">
         <thead>
           <tr>
-            <th>Date</th>
-            <th>Type</th>
-            <th>State</th>
+            <th>Booking Date</th>
+            <th>Direction</th>
+            <th>Status</th>
             <th>Reference</th>
             <th>Amount</th>
             <th>Currency</th>
@@ -319,26 +314,20 @@
         return new Date(iso).toLocaleString();
       }
 
-      function formatAmount(legs) {
-        if (!Array.isArray(legs) || legs.length === 0) return '—';
-        const leg = legs[0];
-        const sign = leg.amount >= 0 ? '+' : '';
-        return `${sign}${Number(leg.amount).toFixed(2)}`;
+      function formatAmount(tx) {
+        const num = Number(tx.amount);
+        if (isNaN(num)) return '—';
+        const sign = tx.creditDebitIndicator === 'Credit' ? '+' : '-';
+        return `${sign}${num.toFixed(2)}`;
       }
 
-      function getCurrency(legs) {
-        if (!Array.isArray(legs) || legs.length === 0) return '—';
-        return legs[0].currency ?? '—';
+      function amountClass(tx) {
+        return tx.creditDebitIndicator === 'Credit' ? 'credit' : 'debit';
       }
 
-      function getDescription(legs) {
-        if (!Array.isArray(legs) || legs.length === 0) return '—';
-        return legs[0].description ?? '—';
-      }
-
-      function badgeClass(state) {
-        if (!state) return '';
-        return state.toLowerCase();
+      function badgeClass(status) {
+        if (!status) return '';
+        return status.toLowerCase();
       }
 
       function renderRows(transactions) {
@@ -360,18 +349,15 @@
         table.style.display = 'table';
 
         transactions.forEach(tx => {
-          const amountVal = Array.isArray(tx.legs) && tx.legs[0] ? tx.legs[0].amount : null;
-          const amountClass =
-            amountVal === null ? '' : amountVal >= 0 ? 'credit' : 'debit';
           const tr = document.createElement('tr');
           tr.innerHTML = `
-            <td>${formatDate(tx.createdAt)}</td>
-            <td>${tx.type ?? '—'}</td>
-            <td><span class="badge ${badgeClass(tx.state)}">${tx.state ?? '—'}</span></td>
-            <td>${tx.reference ?? '—'}</td>
-            <td class="amount ${amountClass}">${formatAmount(tx.legs)}</td>
-            <td>${getCurrency(tx.legs)}</td>
-            <td>${getDescription(tx.legs)}</td>
+            <td>${formatDate(tx.bookingDateTime)}</td>
+            <td>${tx.creditDebitIndicator ?? '—'}</td>
+            <td><span class="badge ${badgeClass(tx.status)}">${tx.status ?? '—'}</span></td>
+            <td>${tx.transactionReference ?? '—'}</td>
+            <td class="amount ${amountClass(tx)}">${formatAmount(tx)}</td>
+            <td>${tx.currency ?? '—'}</td>
+            <td>${tx.transactionInformation ?? '—'}</td>
           `;
           tr.addEventListener('click', () => openModal(tx.id));
           tbody.appendChild(tr);
@@ -380,16 +366,16 @@
 
       function applyFilters() {
         const search = document.getElementById('search').value.toLowerCase();
-        const stateFilter = document.getElementById('state-filter').value;
-        const typeFilter = document.getElementById('type-filter').value;
+        const statusFilter = document.getElementById('state-filter').value;
+        const directionFilter = document.getElementById('type-filter').value;
 
         const filtered = allTransactions.filter(tx => {
-          const ref = (tx.reference ?? '').toLowerCase();
-          const type = (tx.type ?? '').toLowerCase();
-          const matchesSearch = !search || ref.includes(search) || type.includes(search);
-          const matchesState = !stateFilter || tx.state === stateFilter;
-          const matchesType = !typeFilter || tx.type === typeFilter;
-          return matchesSearch && matchesState && matchesType;
+          const ref = (tx.transactionReference ?? '').toLowerCase();
+          const info = (tx.transactionInformation ?? '').toLowerCase();
+          const matchesSearch = !search || ref.includes(search) || info.includes(search);
+          const matchesStatus = !statusFilter || tx.status === statusFilter;
+          const matchesDirection = !directionFilter || tx.creditDebitIndicator === directionFilter;
+          return matchesSearch && matchesStatus && matchesDirection;
         });
 
         renderRows(filtered);

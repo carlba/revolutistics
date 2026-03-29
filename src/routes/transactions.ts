@@ -16,18 +16,19 @@ transactionsRouter.use(apiLimiter);
 transactionsRouter.get('/', async (_req, res) => {
   try {
     const transactions = await prisma.transaction.findMany({
-      orderBy: { createdAt: 'desc' },
+      orderBy: { bookingDateTime: 'desc' },
       take: 500,
       select: {
         id: true,
-        type: true,
-        state: true,
-        createdAt: true,
-        updatedAt: true,
-        completedAt: true,
-        reference: true,
-        legs: true,
-        merchant: true,
+        accountId: true,
+        transactionReference: true,
+        amount: true,
+        currency: true,
+        creditDebitIndicator: true,
+        status: true,
+        bookingDateTime: true,
+        valueDateTime: true,
+        transactionInformation: true,
         syncedAt: true,
       },
     });
